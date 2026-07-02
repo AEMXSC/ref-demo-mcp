@@ -1,0 +1,46 @@
+# MCP Server Template - Adobe I/O Runtime Application Configuration
+# 
+# This configuration file defines how your MCP server will be deployed to Adobe I/O Runtime.
+# You can customize the settings below to match your specific requirements.
+
+application:
+  actions: actions
+  web: web-src
+  runtimeManifest:
+    packages:
+      # Package name - change this to match your project name
+      referencedemomcp:
+        license: MIT
+        actions:
+          # Main MCP server action
+          mcp-server:
+            function: actions/mcp-server/index.js
+            web: 'yes'
+            runtime: 'nodejs:20'
+            limits:
+              # Timeout in milliseconds (5 minutes for complex operations)
+              timeout: 300000
+              # Memory limit in MB (adjust based on your needs)
+              memory: 512
+            inputs:
+              LOG_LEVEL: debug
+              SERVICE_API_KEY: $SERVICE_API_KEY
+              AUTH_VALIDATE_IMS: $AUTH_VALIDATE_IMS
+              ADOBE_TARGET_TENANT: $ADOBE_TARGET_TENANT
+              ADOBE_ATJS_TENANT: $ADOBE_ATJS_TENANT
+              ADOBE_API_KEY: $ADOBE_API_KEY
+              ADOBE_CLIENT_ID: $ADOBE_CLIENT_ID
+              ADOBE_CLIENT_SECRET: $ADOBE_CLIENT_SECRET
+              GITHUB_TOKEN: $GITHUB_TOKEN
+              GITHUB_REPO_OWNER: $GITHUB_REPO_OWNER
+              GITHUB_REPO_NAME: $GITHUB_REPO_NAME
+              GITHUB_FILE_PATH: $GITHUB_FILE_PATH
+            annotations:
+              # No Adobe authentication required for MCP servers
+              require-adobe-auth: false
+              # Final action (no further processing)
+              final: true
+              # Expose as web action
+              web-export: true
+              # Enable raw HTTP mode for MCP protocol
+              raw-http: true
