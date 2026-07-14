@@ -1,5 +1,17 @@
 # Reference Demo MCP
 
+aio login --force
+aio console org select
+aio console project select
+aio console workspace select
+aio app deploy
+
+1. Org: adobe-demo-apac-73
+2. Project: Reference Demo MCP
+3. Workspace: Stage
+use Reference Demo MCP
+
+
 ## Authentication
 
 The MCP server supports two authentication modes to secure your endpoints:

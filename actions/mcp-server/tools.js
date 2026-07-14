@@ -16,12 +16,19 @@ const TARGET_SCOPES = [
   'additional_info.projectedProductContext', 'additional_info.roles',
   'adobeio_api', 'read_pc.dma_bullseye'
 ].join(',')
+const AEM_SCOPES = [
+  'openid', 'AdobeID', 'target_sdk', 'additional_info.projectedProductContext',
+  'read_organizations', 'additional_info.roles', 'contentai.api',
+  'aem.fragments.management', 'aem.folders'
+].join(',')
 
-const tokenCache = { token: null, expiresAt: 0 }
+const tokenCache = {}
 
-async function getAccessToken (params) {
+async function getAccessToken (params, scope = TARGET_SCOPES) {
   if (params.ADOBE_ACCESS_TOKEN) return params.ADOBE_ACCESS_TOKEN
-  if (tokenCache.token && Date.now() < tokenCache.expiresAt) return tokenCache.token
+
+  const cached = tokenCache[scope]
+  if (cached && Date.now() < cached.expiresAt) return cached.token
 
   const res = await fetch(IMS_TOKEN_URL, {
     method: 'POST',
@@ -30,16 +37,18 @@ async function getAccessToken (params) {
       grant_type: 'client_credentials',
       client_id: params.ADOBE_CLIENT_ID,
       client_secret: params.ADOBE_CLIENT_SECRET,
-      scope: TARGET_SCOPES
+      scope
     }).toString()
   })
   if (!res.ok) throw new Error(`IMS token fetch failed: ${res.status} ${await res.text()}`)
   const data = await res.json()
   let expiresIn = data.expires_in || 86400
   if (expiresIn > 1_000_000) expiresIn = expiresIn / 1000
-  tokenCache.token = data.access_token
-  tokenCache.expiresAt = Date.now() + (expiresIn - 300) * 1000
-  return tokenCache.token
+  tokenCache[scope] = {
+    token: data.access_token,
+    expiresAt: Date.now() + (expiresIn - 300) * 1000
+  }
+  return tokenCache[scope].token
 }
 
 function targetHeaders (token, apiKey, version = 'v3') {
@@ -211,6 +220,52 @@ function registerTools (server, params) {
       const res = await fetchAtjs(params)
       const content = await res.text()
       return text(content)
+    }
+  )
+
+  server.tool(
+    'export_cf_to_target',
+    'Export one or more AEM Content Fragments to Adobe Target as offers. Calls the AEM author ' +
+    '.cfm.targetexport endpoint for each set of paths, returning the Target offer ID assigned to ' +
+    'each fragment, or an error message if the export failed for a given path.',
+    {
+      author_url: z.string().describe('Base URL of the AEM author instance, e.g. "https://author-p153659-e1620914.adobeaemcloud.com"'),
+      paths: z.array(z.string()).describe('List of DAM paths to export, e.g. ["/content/dam/wknd-ref/en/fragments/promotions/fragment-one"]'),
+      token: z.string().optional().describe('IMS Bearer token (without the "Bearer " prefix). Defaults to the server\'s configured Adobe IMS credentials if omitted.')
+    },
+    async ({ author_url, paths, token }) => {
+      if (!paths || paths.length === 0) {
+        return text('Error: paths list is empty — provide at least one DAM path.')
+      }
+
+      token = token || await getAccessToken(params, AEM_SCOPES)
+
+      // The export endpoint is appended to the first path in the list.
+      // AEM uses this URL as the "primary" resource; all paths are passed as form params.
+      const endpoint = `${author_url.replace(/\/+$/, '')}${paths[0]}.cfm.targetexport`
+
+      const body = new URLSearchParams()
+      for (const p of paths) body.append('paths', p)
+      body.append('action', 'export')
+
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'application/json'
+          },
+          body: body.toString()
+        })
+        const responseText = await res.text()
+        if (!res.ok) {
+          return text(`HTTP ${res.status} from AEM: ${responseText.slice(0, 500)}`)
+        }
+        return text(responseText)
+      } catch (e) {
+        return text(`Request failed: ${e.message}`)
+      }
     }
   )
 
