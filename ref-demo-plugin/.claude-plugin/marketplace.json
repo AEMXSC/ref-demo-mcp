@@ -1,0 +1,17 @@
+{
+  "name": "reference-demo",
+  "owner": {
+    "name": "Adobe Reference Demo Team"
+  },
+  "metadata": {
+    "description": "Official Reference Demo Framework Skills for building Demos with AI Agents",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "rd-usecase-setup",
+      "source": "./plugins/rd-usecase-setup",
+      "description": "Build and manage reference demo use cases automatically by analyzing the prompt provided by user."
+    }
+  ]
+}

@@ -1,0 +1,156 @@
+#!/usr/bin/env sh
+# gh-site — dependency-free GitHub REST helper for the site-ops domain.
+#
+# Covers the endpoints github-mcp does not expose: create-repo-from-template,
+# installations lookup, attach-repo-to-installation, and a preview URL check.
+# HTTP via curl; JSON parsing via python3 stdlib (no npm/jq needed).
+#
+# Secrets: reads GITHUB_TOKEN / GITHUB_OWNER from ./.env (git-ignored).
+# The token is NEVER printed, echoed, or logged.
+#
+# Usage:
+#   gh-site orgs
+#   gh-site repo-id <repo>
+#   gh-site list-repos
+#   gh-site generate <template_owner> <template_repo> <new_repo>
+#   gh-site installation
+#   gh-site attach <installation_id> <repo>
+#   gh-site preview <url>
+set -eu
+
+API="https://api.github.com"
+
+die() { echo "gh-site: $*" >&2; exit 1; }
+
+# --- load .env (only GITHUB_* needed here) ------------------------------------
+load_env() {
+  ENV_FILE="${ENV_FILE:-./.env}"
+  [ -f "$ENV_FILE" ] || die ".env not found at $ENV_FILE (run setup › auth-setup)"
+  # Export KEY=VALUE lines without echoing values.
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in
+      ''|\#*) continue ;;
+      GITHUB_TOKEN=*|GITHUB_OWNER=*)
+        key=${line%%=*}; val=${line#*=}
+        # strip surrounding quotes/whitespace
+        val=$(printf '%s' "$val" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/^"//' -e 's/"$//')
+        export "$key=$val" ;;
+    esac
+  done < "$ENV_FILE"
+  [ -n "${GITHUB_TOKEN:-}" ] || die "GITHUB_TOKEN missing/empty in .env"
+  case "${GITHUB_TOKEN}" in
+    *"<paste"*) die "GITHUB_TOKEN still a placeholder — paste the real PAT into .env" ;;
+  esac
+}
+
+# --- tiny JSON field reader (python3 stdlib) ----------------------------------
+# json_get <expr>  reads JSON from stdin; expr is python indexing on `d`.
+json_get() {
+  command -v python3 >/dev/null 2>&1 || die "python3 required for JSON parsing"
+  python3 -c 'import sys,json
+d=json.load(sys.stdin)
+print(eval(sys.argv[1]))' "$1"
+}
+
+# GET/POST/PUT helpers. $1=method $2=path-or-url [$3=json-body]
+# Writes body to stdout, HTTP status to the file named by $HTTP_STATUS_FILE.
+api() {
+  _method=$1; _url=$2; _body=${3:-}
+  case "$_url" in http*://*) : ;; *) _url="$API$_url" ;; esac
+  set -- -sS -X "$_method" \
+    -H "Authorization: Bearer $GITHUB_TOKEN" \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    -w '\n%{http_code}' "$_url"
+  if [ -n "$_body" ]; then
+    set -- "$@" -H "Content-Type: application/json" -d "$_body"
+  fi
+  curl "$@"
+}
+
+# Split combined "body\nSTATUS" — returns status via $STATUS, body via $BODY.
+run_api() {
+  _out=$(api "$@")
+  STATUS=$(printf '%s' "$_out" | tail -n1)
+  BODY=$(printf '%s' "$_out" | sed '$d')
+}
+
+owner() { printf '%s' "${GITHUB_OWNER:?GITHUB_OWNER missing in .env}"; }
+
+cmd=${1:-}; [ -n "$cmd" ] || die "no subcommand (see header for usage)"
+shift || true
+load_env
+
+case "$cmd" in
+  orgs)
+    run_api GET /user
+    [ "$STATUS" = 200 ] || die "GET /user -> $STATUS"
+    printf '%s\n' "$BODY" | json_get "d['login']"
+    run_api GET "/user/orgs?per_page=100"
+    [ "$STATUS" = 200 ] || die "GET /user/orgs -> $STATUS"
+    printf '%s\n' "$BODY" | json_get "'\n'.join(o['login'] for o in d)"
+    ;;
+
+  repo-id)
+    [ $# -ge 1 ] || die "usage: gh-site repo-id <repo>"
+    run_api GET "/repos/$(owner)/$1"
+    if [ "$STATUS" = 404 ]; then echo "MISSING"; exit 0; fi
+    [ "$STATUS" = 200 ] || die "GET /repos/$(owner)/$1 -> $STATUS"
+    printf '%s\n' "$BODY" | json_get "d['id']"
+    ;;
+
+  list-repos)
+    # Is GITHUB_OWNER an org the user belongs to? If so list org repos; else user repos.
+    run_api GET "/user/orgs?per_page=100"
+    [ "$STATUS" = 200 ] || die "GET /user/orgs -> $STATUS"
+    _is_org=no
+    if printf '%s\n' "$BODY" | json_get "'\n'.join(o['login'] for o in d)" | grep -Fxq "$(owner)"; then
+      _is_org=yes
+    fi
+    if [ "$_is_org" = yes ]; then
+      run_api GET "/orgs/$(owner)/repos?per_page=100&type=all"
+    else
+      run_api GET "/user/repos?per_page=100&affiliation=owner"
+    fi
+    [ "$STATUS" = 200 ] || die "list repos -> $STATUS"
+    printf '%s\n' "$BODY" | json_get "'\n'.join(r['full_name'] for r in d)"
+    ;;
+
+  generate)
+    [ $# -ge 3 ] || die "usage: gh-site generate <template_owner> <template_repo> <new_repo>"
+    _to=$1; _tr=$2; _new=$3
+    body=$(python3 -c 'import json,sys;print(json.dumps({"owner":sys.argv[1],"name":sys.argv[2],"private":True,"include_all_branches":False}))' "$(owner)" "$_new")
+    run_api POST "/repos/$_to/$_tr/generate" "$body"
+    case "$STATUS" in
+      201) printf '%s\n' "$BODY" | json_get "d['full_name']" ;;
+      422) die "generate -> 422 (repo '$_new' may already exist, or '$_to/$_tr' is not a template repo)" ;;
+      *)   die "generate -> $STATUS" ;;
+    esac
+    ;;
+
+  installation)
+    run_api GET "/user/installations?per_page=100"
+    [ "$STATUS" = 200 ] || die "GET /user/installations -> $STATUS (needs a PAT that can see installations)"
+    printf '%s\n' "$BODY" | json_get "next((str(i['id']) for i in d.get('installations',[]) if i.get('app_slug')=='aem-code-sync'), 'NOT_INSTALLED')"
+    ;;
+
+  attach)
+    [ $# -ge 2 ] || die "usage: gh-site attach <installation_id> <repo>"
+    _inst=$1; _repo=$2
+    run_api GET "/repos/$(owner)/$_repo"
+    [ "$STATUS" = 200 ] || die "repo $(owner)/$_repo not found ($STATUS)"
+    _rid=$(printf '%s\n' "$BODY" | json_get "d['id']")
+    run_api PUT "/user/installations/$_inst/repositories/$_rid"
+    case "$STATUS" in
+      204|304) echo "ATTACHED" ;;    # 204 added, 304 already present (idempotent)
+      *) die "attach -> $STATUS" ;;
+    esac
+    ;;
+
+  preview)
+    [ $# -ge 1 ] || die "usage: gh-site preview <url>"
+    curl -sS -o /dev/null -w '%{http_code}\n' "$1"
+    ;;
+
+  *) die "unknown subcommand: $cmd" ;;
+esac

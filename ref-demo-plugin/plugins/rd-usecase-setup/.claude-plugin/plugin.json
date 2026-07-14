@@ -1,0 +1,64 @@
+{
+  "name": "rd-usecase-setup",
+  "version": "1.0.0",
+  "description": "Setup Reference Demo Use Cases automatically by analyzing the prompt provided by user.",
+  "author": {
+    "name": "Adobe"
+  },
+  "repository": "https://github.com/Adobe-DemoPOC/rd-ai-plugin",
+  "license": "Apache-2.0",
+  "skills": [
+    "./skills/reference-demo-orchestrator",
+    "./skills/reference-demo-orchestrator/references/planner",
+    "./skills/reference-demo-orchestrator/references/domain-registry",
+    "./skills/setup",
+    "./skills/setup/references/workspace-init",
+    "./skills/setup/references/auth-setup",
+    "./skills/setup/references/env-config",
+    "./skills/build",
+    "./skills/build/references/aem-content",
+    "./skills/build/references/target-activities",
+    "./skills/notify",
+    "./skills/notify/references/send-sms",
+    "./skills/site-ops",
+    "./skills/site-ops/references/create-eds-site",
+    "./skills/site-ops/references/git-operations"
+  ],
+  "mcpServers": {
+    "export-cf-to-target": {
+      "type": "http",
+      "url": "https://3635370-rdmcp-stage.adobeioruntime.net/api/v1/web/rd-mcp/mcp-server"
+    },
+    "adobe-target-mcp": {
+      "type": "http",
+      "url": "https://targetmcp.adobe.io/mcp"
+    },
+    "aem-content-prod": {
+      "type": "http",
+      "url": "https://mcp.adobeaemcloud.com/adobe/mcp/content"
+    },
+    "adobe-experience-manager": {
+      "type": "http",
+      "url": "https://mcp.adobeaemcloud.com/adobe/mcp/aem"
+    },
+    "github-mcp": {
+      "type": "http",
+      "url": "https://api.github.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${GITHUB_TOKEN}"
+      }
+    },
+    "adobe-creativity-mcp": {
+      "type": "http",
+      "url": "https://adobe-creativity.adobe.io/mcp"
+    }
+  },
+  "keywords": [
+    "adobe",
+    "aem",
+    "target",
+    "mcp",
+    "content-management",
+    "personalization"
+  ]
+}

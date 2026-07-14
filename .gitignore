@@ -4,10 +4,13 @@ node_modules/
 # Build and deployment output
 dist/
 build/
+.manifest-dist.yml
+last-built-actions.json
 
 # Test coverage
 coverage/
 .nyc_output/
+junit.xml
 
 # Logs
 logs/
@@ -21,11 +24,19 @@ lerna-debug.log*
 # Environment and local configuration
 .env
 .env.*
+.env*
 !.env.example
 .aio
 .aio/
 .wskprops
+.wskdebug.props.tmp
 workspace-config.json
+*.local.json
+
+# Adobe I/O workspace downloads (contain Runtime credentials)
+*-Stage.json
+*-Production.json
+console.json
 
 # Runtime and cache files
 .cache/
@@ -38,9 +49,23 @@ workspace-config.json
 # IDE and editor files
 .idea/
 .vscode/
+.claude/
+.serenasitter/
+.cursor/
+!.cursor/rules/
 *.swp
 *.swo
 
 # OS files
 .DS_Store
 Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Temporary and generated content from nested projects
+temp-template-test/
+.yo-repository

@@ -1,0 +1,18 @@
+{
+  "name": "rd-usecase-setup",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Adobe Reference Demo skills for setting up AEM and Adobe Target use cases through conversation",
+  "scripts": {
+    "validate": "find plugins -name SKILL.md -exec dirname {} \\; | xargs -I {} skills-ref validate {}"
+  },
+  "devDependencies": {
+    "skills-ref": "^0.1.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Adobe-DemoPOC/rd-ai-plugin.git"
+  },
+  "license": "Apache-2.0"
+}

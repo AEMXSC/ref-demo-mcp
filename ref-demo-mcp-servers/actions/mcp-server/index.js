@@ -23,7 +23,9 @@ require('./node18-web-globals.js')
 const { Core } = require('@adobe/aio-sdk')
 const { McpServer } = require('@modelcontextprotocol/sdk/server/mcp.js')
 const { StreamableHTTPServerTransport } = require('@modelcontextprotocol/sdk/server/streamableHttp.js')
-const { registerTools, registerResources, registerPrompts } = require('./tools.js')
+const { registerTools } = require('./tools')
+const { registerResources } = require('./resources')
+const { registerPrompts } = require('./prompts')
 const { validateRequestAuth } = require('./validator.js')
 
 // SDK 1.24+ uses Web Standard transport. Optional module (see webpack externals) so build succeeds on 1.17.4.
@@ -47,9 +49,9 @@ let logger = null
  * Create MCP server instance with all capabilities
  * Following the exact pattern from SDK examples
  */
-function createMcpServer (params) {
+function createMcpServer () {
     const server = new McpServer({
-    name: 'referencedemomcp',
+    name: 'rd-mcp',
         version: '1.0.0'
     }, {
         capabilities: {
@@ -61,7 +63,7 @@ function createMcpServer (params) {
     })
 
     // Register all capabilities
-    registerTools(server, params)
+    registerTools(server)
     registerResources(server)
     registerPrompts(server)
 
@@ -309,7 +311,7 @@ function handleHealthCheck () {
         },
         body: JSON.stringify({
             status: 'healthy',
-            server: 'referencedemomcp',
+            server: 'rd-mcp',
             version: '1.0.0',
             description: 'Adobe I/O Runtime MCP Server using official TypeScript SDK MCP v1.24.x',
             timestamp: new Date().toISOString(),
@@ -343,7 +345,7 @@ function handleOptionsRequest () {
 * falls back to StreamableHTTPServerTransport + mock req/res on SDK 1.17.x.
 */
 async function handleMcpRequest (params) {
-    const server = createMcpServer(params)
+    const server = createMcpServer()
     const body = parseRequestBody(params)
 
     try {
@@ -433,7 +435,7 @@ async function main (params) {
 
         // Initialize logger
         try {
-            logger = Core.Logger('referencedemomcp', { level: params.LOG_LEVEL || 'info' })
+            logger = Core.Logger('rd-mcp', { level: params.LOG_LEVEL || 'info' })
         } catch (loggerError) {
             console.error('Logger creation error:', loggerError)
             return {

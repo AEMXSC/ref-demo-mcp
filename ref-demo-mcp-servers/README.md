@@ -1,16 +1,8 @@
-# Reference Demo MCP
+# MCP Server on Adobe I/O Runtime Template
 
-aio login --force
-aio console org select
-aio console project select
-aio console workspace select
-aio app deploy
+Create [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) servers for Adobe I/O Runtime using the **official MCP TypeScript SDK**. Connect AI assistants like Cursor and Claude Desktop to your custom tools, resources, and prompts.
 
-1. Org: adobe-demo-apac-73
-2. Project: Reference Demo MCP
-3. Workspace: Stage
-use Reference Demo MCP
-
+This Project is generated using https://github.com/OneAdobe/app-builder-remote-mcp-server-starter template.
 
 ## Authentication
 

@@ -1,7 +1,7 @@
 {
-  "name": "referencedemomcp",
+  "name": "rd-mcp",
   "version": "1.0.0",
-  "description": "Model Context Protocol server with Adobe I/O Runtime",
+  "description": "Project to running utility operations on reference demo framework using MCP",
   "main": "actions/mcp-server/index.js",
   "scripts": {
     "test": "jest",
@@ -46,7 +46,7 @@
     "url": "https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git"
   },
   "license": "MIT",
-  "author": "ReferenceDemoTeam <your.email@example.com>",
+  "author": "refdemo <your.email@example.com>",
   "aio-app-builder-templates": [
     "@adobe/generator-app-remote-mcp-server-generic"
   ]
