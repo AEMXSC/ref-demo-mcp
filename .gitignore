@@ -3,7 +3,7 @@ node_modules/
 
 # Build and deployment output
 dist/
-build/
+ref-demo-mcp-servers/build/
 .manifest-dist.yml
 last-built-actions.json
 
