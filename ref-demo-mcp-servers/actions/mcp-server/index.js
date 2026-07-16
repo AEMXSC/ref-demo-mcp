@@ -49,7 +49,7 @@ let logger = null
  * Create MCP server instance with all capabilities
  * Following the exact pattern from SDK examples
  */
-function createMcpServer () {
+function createMcpServer (params) {
     const server = new McpServer({
     name: 'rd-mcp',
         version: '1.0.0'
@@ -63,7 +63,7 @@ function createMcpServer () {
     })
 
     // Register all capabilities
-    registerTools(server)
+    registerTools(server, params)
     registerResources(server)
     registerPrompts(server)
 
@@ -345,7 +345,7 @@ function handleOptionsRequest () {
 * falls back to StreamableHTTPServerTransport + mock req/res on SDK 1.17.x.
 */
 async function handleMcpRequest (params) {
-    const server = createMcpServer()
+    const server = createMcpServer(params)
     const body = parseRequestBody(params)
 
     try {

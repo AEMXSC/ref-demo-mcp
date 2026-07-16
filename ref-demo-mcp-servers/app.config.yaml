@@ -31,6 +31,12 @@ application:
               # Leave both unset for no authentication (development only)
               SERVICE_API_KEY: $SERVICE_API_KEY
               AUTH_VALIDATE_IMS: $AUTH_VALIDATE_IMS
+              # Adobe Target credentials, used by the get_atjs tool
+              ADOBE_CLIENT_ID: $ADOBE_CLIENT_ID
+              ADOBE_CLIENT_SECRET: $ADOBE_CLIENT_SECRET
+              ADOBE_ATJS_TENANT: $ADOBE_ATJS_TENANT
+              ADOBE_API_KEY: $ADOBE_API_KEY
+              ADOBE_ACCESS_TOKEN: $ADOBE_ACCESS_TOKEN
             annotations:
               # No Adobe authentication required for MCP servers
               require-adobe-auth: false

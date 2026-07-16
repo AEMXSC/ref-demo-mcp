@@ -22,16 +22,18 @@ const echo = require('./echo')
 const calculator = require('./calculator')
 const weather = require('./weather')
 const exportContentFragmentToTarget = require('./export-content-fragment-to-target')
+const getAtjs = require('./get-atjs')
 
-const tools = [echo, calculator, weather, exportContentFragmentToTarget]
+const tools = [echo, calculator, weather, exportContentFragmentToTarget, getAtjs]
 
 /**
  * Register all tools with the MCP server
  * @param {McpServer} server - The MCP server instance
+ * @param {object} params - Adobe I/O Runtime action params (env vars/inputs)
  */
-function registerTools (server) {
+function registerTools (server, params) {
     tools.forEach(({ name, description, schema, handler }) => {
-        server.tool(name, description, schema, handler)
+        server.tool(name, description, schema, (args) => handler(args, params))
     })
 }
 
