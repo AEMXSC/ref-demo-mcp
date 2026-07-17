@@ -2,23 +2,7 @@
 
 Create [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) servers for Adobe I/O Runtime using the **official MCP TypeScript SDK**. Connect AI assistants like Cursor and Claude Desktop to your custom tools, resources, and prompts.
 
-## Steps to Build
-
-Run these commands from the project root:
-
-```bash
-aio login --force
-aio console org select
-aio console project select
-aio console workspace select
-aio app deploy
-```
-
-When prompted, selected values look similar to:
-
-1. **Org:** AEM XSC Showcase
-2. **Project:** Reference Demo MCP
-3. **Workspace:** Stage
+This Project is generated using https://github.com/OneAdobe/app-builder-remote-mcp-server-starter template.
 
 ## Authentication
 
@@ -139,5 +123,3 @@ curl -H "x-api-key: your-secret-key-here" \
 Leave both variables unset for open access (not recommended for production).
 
 **Security Note:** Always use authentication in production deployments. Generate strong random values for `SERVICE_API_KEY` and never commit secrets to version control. 
-
-

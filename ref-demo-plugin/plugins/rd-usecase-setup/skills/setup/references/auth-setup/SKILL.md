@@ -9,29 +9,30 @@ type: skill
 license: Apache-2.0
 metadata:
   author: Your Organization
-  version: "0.3"
+  version: "0.4"
 ---
 
 # Authentication Setup
 
-AEM and Adobe Target operations mostly go through their installed MCP connectors, which manage their own OAuth. The one exception is the dedicated `export_content_fragment_to_target` tool (see `aem-content`), which makes its own direct HTTP call to AEM and therefore needs its own bearer token — `AEM_EXPORT_TOKEN`. This skill loads or collects `AEM_HOST`, `TARGET_ORG`, and `AEM_EXPORT_TOKEN` in `.env`, gets explicit user confirmation, and only then proceeds — every later step in the flow reuses these confirmed values rather than re-asking.
+AEM and Adobe Target operations mostly go through their installed MCP connectors, which manage their own OAuth. The dedicated `export_content_fragment_to_target` tool (see `aem-content`) makes its own direct HTTP call to AEM, but it authenticates using the caller's own IMS bearer token — forwarded by the Coworker/MCP gateway as the request's `Authorization` header and read server-side, never passed as a tool argument. This skill loads or collects `AEM_HOST` and `TARGET_ORG` in `.env`, gets explicit user confirmation, and only then proceeds — every later step in the flow reuses these confirmed values rather than re-asking.
 
 ## Critical Rules
 
 1. **Never invent credentials** — always prompt for or confirm real values; never fabricate a placeholder and treat it as real
 2. **Confirm before proceeding** — whether `.env` values are freshly entered or already present, the user must explicitly confirm them before anything else runs
-3. **Reuse, don't re-ask** — once confirmed, `AEM_HOST`/`TARGET_ORG`/`AEM_EXPORT_TOKEN` are used for every subsequent call in the session; don't re-derive or re-prompt later
+3. **Reuse, don't re-ask** — once confirmed, `AEM_HOST`/`TARGET_ORG` are used for every subsequent call in the session; don't re-derive or re-prompt later
 4. **Verify by calling a real tool** — "authorized" means a real MCP call succeeds, not just that the connector is listed
-5. **Mask real credentials in all output** — `AEM_EXPORT_TOKEN` and `GITHUB_TOKEN` are real credentials, unlike `AEM_HOST`/`TARGET_ORG`/`GITHUB_OWNER`
+5. **Never prompt for AEM or IMS tokens** — the `export-cf-to-target` MCP reads the caller's IMS token from the request's `Authorization` header (gateway-injected); the only real credential this skill still handles is `GITHUB_TOKEN`, which must be masked in all output
+6. **Mask real credentials in all output** — `GITHUB_TOKEN` is a real credential, unlike `AEM_HOST`/`TARGET_ORG`/`GITHUB_OWNER`
 
 ## Workflow
 
 ### Step 1: Load or collect `.env` values
 
-Check `.env` for `AEM_HOST`, `TARGET_ORG`, and `AEM_EXPORT_TOKEN`.
+Check `.env` for `AEM_HOST` and `TARGET_ORG`.
 
-- **Not present / empty:** prompt the user for each value **one at a time** — `AEM_HOST` (the AEM author environment URL), then `TARGET_ORG` (the Target org/tenant identifier), then `AEM_EXPORT_TOKEN` (a bearer token from a technical/service account, scoped to content-fragment export — see `aem-content`'s export section for why this one needs its own token) — and write them to `.env`.
-- **Already present:** show the user the current values (mask `AEM_EXPORT_TOKEN`) and ask them to confirm they're still correct. If the user provides a correction, update `.env`.
+- **Not present / empty:** prompt the user for each value **one at a time** — `AEM_HOST` (the AEM author environment URL), then `TARGET_ORG` (the Target org/tenant identifier) — and write them to `.env`.
+- **Already present:** show the user the current values and ask them to confirm they're still correct. If the user provides a correction, update `.env`.
 
 **Do not proceed to Step 2 until the user has explicitly confirmed** — either by supplying fresh values or confirming the existing ones.
 
@@ -68,7 +69,7 @@ Both are one-time, manual, admin-console/repo steps outside this skill's reach. 
 
 | Check | Status | Message |
 |-------|--------|---------|
-| `.env` values confirmed | ✅/❌ | `AEM_HOST` / `TARGET_ORG` / `AEM_EXPORT_TOKEN` as confirmed in Step 1 |
+| `.env` values confirmed | ✅/❌ | `AEM_HOST` / `TARGET_ORG` as confirmed in Step 1 |
 | GitHub creds confirmed (site-ops only) | ✅/❌ | `GITHUB_OWNER` and masked `GITHUB_TOKEN` as confirmed in Step 1b |
 | AEM MCP connector authorized | ✅/❌ | Result of `list-aem-environments`, incl. any `AEM_HOST` mismatch |
 | AEM environment awake | ✅/❌ | Result of the `read-api` probe |
@@ -79,5 +80,5 @@ Both are one-time, manual, admin-console/repo steps outside this skill's reach. 
 ## Notes
 
 - This session cannot run an OAuth flow itself — if a connector isn't authorized, the fix happens outside this skill (claude.ai connector settings, or `claude mcp` / `/mcp` interactively). Don't ask the user for auth codes, tokens, or callback URLs — that flow is separate from `.env` and doesn't apply to `AEM_HOST`/`TARGET_ORG`.
-- `AEM_HOST` and `TARGET_ORG` are non-secret targeting values, confirmed once per session in Step 1 and reused as-is (`AEM_HOST` as the `aemUrl` argument to every `list-aem-environments`/`lookup-api-spec`/`read-api`/`write-api` call).
-- `AEM_EXPORT_TOKEN` **is** a real credential — the one exception to "no tokens in this plugin." It exists solely because `export_content_fragment_to_target` (hosted by `export-cf-to-target`, see `aem-content`) makes its own direct HTTP call to AEM and can't reuse the AEM MCP connector's OAuth session. Scope it to a technical/service account with only the access that endpoint needs, not a personal admin token.
+- `AEM_HOST` and `TARGET_ORG` are non-secret targeting values, confirmed once per session in Step 1 and reused as-is (`AEM_HOST` as the `aemUrl` argument to every `list-aem-environments`/`lookup-api-spec`/`read-api`/`write-api` call, and as the `aem_host` argument to `export_content_fragment_to_target`).
+- `export_content_fragment_to_target` (hosted by `export-cf-to-target`, see `aem-content`) makes its own direct HTTP call to AEM, authenticated with the caller's IMS bearer token forwarded by the gateway as the request's `Authorization` header — this plugin never sees or stores that token, and there is no `AEM_EXPORT_TOKEN` to configure.

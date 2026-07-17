@@ -60,12 +60,11 @@ Create: `config/`, `content/aem/`, `content/target/`, `.agent/`, `plans/`
 REFERENCE_DEMO_WORKSPACE=/path/to/workspace
 AEM_HOST=
 TARGET_ORG=
-AEM_EXPORT_TOKEN=
 GITHUB_OWNER=
 GITHUB_TOKEN=
 ```
 
-Leave these blank here — `auth-setup` is what prompts the user for these values (or confirms them if already set) before any AEM/Target/site operation runs. `AEM_HOST`/`TARGET_ORG`/`GITHUB_OWNER` are non-secret; `AEM_EXPORT_TOKEN` and `GITHUB_TOKEN` are real credentials. `AEM_EXPORT_TOKEN` is a technical/service-account bearer token, needed only because the `export_content_fragment_to_target` MCP tool (hosted by `export-cf-to-target`, see `aem-content`) makes its own direct HTTP call to AEM rather than going through the installed AEM connector's OAuth. `GITHUB_TOKEN` is a classic GitHub PAT (`repo` scope) used by the `site-ops` domain — it is wired into the `github-mcp` config (`Authorization: Bearer ${GITHUB_TOKEN}`) and read by the `gh-site` helper for repo/app operations.
+Leave these blank here — `auth-setup` is what prompts the user for these values (or confirms them if already set) before any AEM/Target/site operation runs. `AEM_HOST`/`TARGET_ORG`/`GITHUB_OWNER` are non-secret; `GITHUB_TOKEN` is a real credential — a classic GitHub PAT (`repo` scope) used by the `site-ops` domain, wired into the `github-mcp` config (`Authorization: Bearer ${GITHUB_TOKEN}`) and read by the `gh-site` helper for repo/app operations. The `export_content_fragment_to_target` MCP tool (hosted by `export-cf-to-target`, see `aem-content`) authenticates with the caller's own IMS token, forwarded by the gateway as the request's `Authorization` header — there is no export token to store in `.env`.
 
 ### Step 4: Create .gitignore
 

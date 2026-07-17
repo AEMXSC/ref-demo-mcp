@@ -96,21 +96,21 @@ Used for AEM Sites/EDS personalization demos where a page block (e.g. a "Promoti
 
 **Do not use the generic AEM connector's `lookup-api-spec`/`write-api` for this.** That discovery path is ambiguous enough to silently do the wrong thing — observed in practice, it created the offer via Target's own API instead of AEM's actual export endpoint, which shows up in Target as offer source **"Adobe Target API"** instead of **"Adobe Experience Manager"**. Use the dedicated `export_content_fragment_to_target` MCP tool instead — it's hosted by the `export-cf-to-target` server (see this plugin's `.claude-plugin/plugin.json`, backed by the `rd-adobeio-mcp` project deployed on Adobe I/O Runtime) and always makes the same known-correct HTTP call: `POST {AEM_HOST}{export_path}.cfm.targetexport` with `paths` (repeated) and `action=export`.
 
-**Tool:** `export_content_fragment_to_target(export_path, fragment_paths, aem_host, aem_export_token)`
+**Tool:** `export_content_fragment_to_target(export_path, fragment_paths, aem_host)`
 - `export_path` — path to append `.cfm.targetexport` to: the fragment's own path for a single export, or a common parent folder for several at once
 - `fragment_paths` — full DAM paths of the fragments to export
-- `aem_host` / `aem_export_token` — passed on every call, read from `.env` (confirmed by `auth-setup`). This tool runs on a shared hosted MCP endpoint, not a locally-spawned process, so it can't read per-user env vars itself — the calling assistant must supply them as arguments each time.
+- `aem_host` — passed on every call, read from `.env` (confirmed by `auth-setup`). This tool runs on a shared hosted MCP endpoint, not a locally-spawned process, so it can't read per-user env vars itself — the calling assistant must supply it as an argument each time. There is no token argument: the tool authenticates the outbound call to AEM with the caller's own IMS bearer token, forwarded by the Coworker/MCP gateway as the request's `Authorization` header and never exposed to the chat or the calling assistant.
 
 **Response:** a JSON array, one entry per fragment path:
 - Success: `{"path": "/content/dam/promotions/surfing-lovers", "targetOfferID": 317492}`
 - Failure: `{"path": "/content/dam/promotions/team-alpha", "error": "Unable to connect to Target"}`
 
-1. Call `export_content_fragment_to_target` with the block's fragment folder as `export_path`, all variant fragment paths as `fragment_paths`, and `AEM_HOST`/`AEM_EXPORT_TOKEN` from `.env` as `aem_host`/`aem_export_token`.
+1. Call `export_content_fragment_to_target` with the block's fragment folder as `export_path`, all variant fragment paths as `fragment_paths`, and `AEM_HOST` from `.env` as `aem_host`.
 2. **Check every entry in the response array individually** — a successful call can still contain per-fragment `error` entries; don't assume every fragment exported just because the call succeeded.
 3. **Store each successful `targetOfferID`** in that fragment's local `metadata.json` — this is the `offer_id` `target-activities` needs, with no separate `list_target_offers` lookup required.
 4. **Verify the resulting offer's source in Target reads "Adobe Experience Manager"** — if it reads "Adobe Target API" instead, something bypassed this tool; don't proceed to build the activity on a wrongly-sourced offer.
 
-**Requires** `AEM_HOST` and `AEM_EXPORT_TOKEN` in `.env` (confirmed by `auth-setup`). `AEM_EXPORT_TOKEN` is a bearer token scoped specifically to this export tool — a technical/service-account AEM token, separate from the AEM MCP connector's own OAuth, since this tool makes its own direct HTTP call and can't reuse the connector's session.
+**Requires** `AEM_HOST` in `.env` (confirmed by `auth-setup`). Authentication for the actual AEM call is handled entirely by the gateway-forwarded IMS token — nothing to configure here.
 
 ### Updating a Page Block's Authored Content Fragment
 

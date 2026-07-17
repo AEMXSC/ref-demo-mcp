@@ -26,7 +26,8 @@ const { StreamableHTTPServerTransport } = require('@modelcontextprotocol/sdk/ser
 const { registerTools } = require('./tools')
 const { registerResources } = require('./resources')
 const { registerPrompts } = require('./prompts')
-const { validateRequestAuth } = require('./validator.js')
+const { validateRequestAuth, getTokenFromRequest } = require('./validator.js')
+const { runWithRequestAuth } = require('./request-context.js')
 
 // SDK 1.24+ uses Web Standard transport. Optional module (see webpack externals) so build succeeds on 1.17.4.
 // undefined = not yet loaded; null = load failed or unavailable; otherwise the transport class.
@@ -347,7 +348,12 @@ function handleOptionsRequest () {
 async function handleMcpRequest (params) {
     const server = createMcpServer()
     const body = parseRequestBody(params)
+    const requestAuth = { imsToken: getTokenFromRequest(params), userInfo: params.AUTH_USER_INFO }
 
+    return runWithRequestAuth(requestAuth, () => handleMcpRequestInner(params, server, body))
+}
+
+async function handleMcpRequestInner (params, server, body) {
     try {
         logger?.info('Creating fresh MCP server and transport')
 
