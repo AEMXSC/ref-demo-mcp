@@ -78,7 +78,14 @@ content/aem/
 2. **`lookup-api-spec`** — search for the create/update page recipe
 3. **`write-api`** — dry-run first, then `confirmed: true`
 4. **Validate** — `read-api` to confirm the result
-5. **Capture user-facing page URL for final summary** — once page path/slug is confirmed, include the resolved AEM page URL in the final user summary table automatically (do not wait for the user to ask for it)
+5. **Capture one full user-facing page URL for final summary** — include a single fully-qualified URL (scheme + host + full content path + `.html`) in the final summary table automatically (do not wait for the user to ask for it).
+6. **Verify the page URL exists before reporting it** — run a lightweight `read-api` check against that exact URL path and only report it if it resolves (non-404). If the check returns 404, do not present the link as final; reconcile the path first.
+
+Page URL construction rules for summaries:
+- Always preserve the exact full AEM repository path returned/validated by AEM (for example including `language-masters` when present).
+- Do not split host and path into separate table cells/phrases.
+- Do not synthesize or shorten paths based on assumptions (locale shortcuts, inferred sections, etc.).
+- Preferred example shape: `https://author-<id>.adobeaemcloud.com/content/<site>/language-masters/en/<page>.html`
 
 ### Promotion Fragments — AEM Sites + Target (multi-variant blocks)
 

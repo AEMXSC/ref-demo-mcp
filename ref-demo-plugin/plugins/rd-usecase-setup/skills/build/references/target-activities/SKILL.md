@@ -118,8 +118,13 @@ To add more audience/offer pairs to an existing activity later, use `add_activit
 For AEM + Target personalization journeys, the final assistant response must always include a compact summary table and must not wait for the user to ask for links explicitly.
 
 Required rows in that final table:
-- `AEM Page` — include the authored/published page URL.
+- `AEM Page` — include one fully-qualified authored/published page URL (not split host + path).
 - `Target Activity` — include activity name plus canonical URL.
+
+`AEM Page` row requirements:
+- Use the exact validated AEM path (including segments such as `language-masters` when present).
+- Include the full URL in one value, e.g. `https://author-<id>.adobeaemcloud.com/content/<site>/language-masters/en/<page>.html`.
+- Verify it resolves before reporting (non-404 check via AEM connector flow in `aem-content`).
 
 ### Canonical Target Activity URL (required)
 

@@ -60,8 +60,17 @@ Call a lightweight Target tool such as `list_target_mboxes` or `list_target_acti
 ### Step 5: For AEM + Target personalization journeys — confirm integration prerequisites up front
 
 Before generating or executing any plan for a personalization journey (content-fragment-backed page/block personalization), **ask the user directly** — there's no API to check either of these:
-1. **AEM↔Target IMS integration is already configured** ([click here for instructions](https://experienceleague.adobe.com/en/docs/experience-manager-cloud-service/content/sites/integrations/integrating-adobe-target)), and
-2. **The EDS repo's `/scripts/at-lsig.js` is already the at.js library** from Target > Administration > Implementation ([click here for instructions](https://referencedemo.adobe.com/personalization/aem-sites-personalization)).
+1. **AEM and Adobe Target are already connected** ([click here for setup instructions](https://experienceleague.adobe.com/en/docs/experience-manager-cloud-service/content/sites/integrations/integrating-adobe-target)), and
+2. **Target library (at.js) is already included in your AEM EDS project** ([click here for setup instructions](https://referencedemo.adobe.com/personalization/aem-sites-personalization)).
+
+UX requirement for this confirmation step:
+- Show both doc links in the **first** message where confirmation is requested (not only after the user selects "No / Don't know").
+- Use plain-language labels for options:
+  - `Yes, both are already set up`
+  - `No / Not sure (show me setup steps)`
+- Keep the technical details as secondary helper text only if needed:
+  - "AEM and Adobe Target are already connected" corresponds to the AEM↔Target IMS integration prerequisite.
+  - "Target library (at.js) is already included in your AEM EDS project" corresponds to replacing `/scripts/at-lsig.js` with the Target at.js library.
 
 Both are one-time, manual, admin-console/repo steps outside this skill's reach. If either isn't confirmed, **stop the whole journey here** — don't let it surface three steps later inside `aem-content`'s fragment-creation workflow.
 

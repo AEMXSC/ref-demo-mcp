@@ -28,7 +28,7 @@ Setup → Build → Integration → Validation
 | AEM + Target personalization by page content fragment (AEM Sites Personalization style) | `01-setup-check`, `02-fragment-variants`, `03-export-to-target`, `04-audience-setup`, `05-activity-build`, `06-validate` |
 
 For the personalization journey above, Plan `06-validate` must end with a final user summary table that includes:
-- `AEM Page` URL
+- `AEM Page` full URL (single value, not host/path split), validated as non-404
 - `Target Activity` canonical Experience Cloud URL (org + activity-type + activity-id)
 
 Do not defer these links to follow-up questions.
