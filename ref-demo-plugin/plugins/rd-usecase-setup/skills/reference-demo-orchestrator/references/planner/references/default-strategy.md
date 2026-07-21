@@ -27,6 +27,12 @@ Setup → Build → Integration → Validation
 | New EDS UE site | `01-site-decision`, `02-create-repo`, `03-ue-config`, `04-code-sync-app`, `05-validate` |
 | AEM + Target personalization by page content fragment (AEM Sites Personalization style) | `01-setup-check`, `02-fragment-variants`, `03-export-to-target`, `04-audience-setup`, `05-activity-build`, `06-validate` |
 
+For the personalization journey above, Plan `06-validate` must end with a final user summary table that includes:
+- `AEM Page` URL
+- `Target Activity` canonical Experience Cloud URL (org + activity-type + activity-id)
+
+Do not defer these links to follow-up questions.
+
 ### 1a. Recognizing a Personalization Journey from Free Text
 
 A prompt like *"Setup personalization demo using AEM and Adobe Target for audience who are interested in \<X\> by modifying the \<fragment\> content fragment on \<page\> of the AEM Site named \<site\>"* is the page-content-fragment journey. Extract these parameters before generating plans — if any are missing or ambiguous, ask rather than guess:

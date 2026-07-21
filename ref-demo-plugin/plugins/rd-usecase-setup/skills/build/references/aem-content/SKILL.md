@@ -78,6 +78,7 @@ content/aem/
 2. **`lookup-api-spec`** — search for the create/update page recipe
 3. **`write-api`** — dry-run first, then `confirmed: true`
 4. **Validate** — `read-api` to confirm the result
+5. **Capture user-facing page URL for final summary** — once page path/slug is confirmed, include the resolved AEM page URL in the final user summary table automatically (do not wait for the user to ask for it)
 
 ### Promotion Fragments — AEM Sites + Target (multi-variant blocks)
 

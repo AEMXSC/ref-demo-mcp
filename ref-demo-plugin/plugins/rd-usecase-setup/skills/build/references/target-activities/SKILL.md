@@ -27,10 +27,42 @@ Create and manage Adobe Target activities using the installed **Adobe Target MCP
 Two ways audiences get built in these demos — pick based on what the requirement actually says, don't assume:
 
 **Rule-based Audience** (`target_rule` source `page`, `referring`, or `landingPage`) — for page/promotion personalization where there's no profile record, just an interest/segment keyword (e.g. "audience interested in boxing"):
-- Match on current/referring/landing page URL, domain, path, or query **containing** the keyword
-- Operator: `contains` (or `containsIgnoreCase`)
-- In the Target UI this is built under **Site Pages → Previous Page → URL → Contains** (matches the *referring* page, not the current page)
-- Example `target_rule`: `{"referring": {"url": {"contains": ["boxing"]}}}`
+- Use a logical `or` with exactly two branches for this use case:
+  - Previous page URL contains the interest keyword (`referring.url.contains` or `containsIgnoreCase`)
+  - Current page query contains `cid=<interest>` (`page.query.contains` or `containsIgnoreCase`)
+- In the Target UI this maps to:
+  - **Site Pages → Previous Page → URL → Contains**
+  - **OR**
+  - **Site Pages → Current Page → Query → Contains `cid=<interest>`**
+- Production-ready `target_rule` template:
+
+```json
+{
+  "or": [
+    {
+      "referring": {
+        "url": {
+          "containsIgnoreCase": ["boxing"]
+        }
+      }
+    },
+    {
+      "page": {
+        "query": {
+          "containsIgnoreCase": ["cid=boxing"]
+        }
+      }
+    }
+  ]
+}
+```
+
+- Interpretation for the example above:
+  - `https://example.com/sale/boxing-gear` as the **previous page** qualifies.
+  - Any **current page** URL with `?cid=boxing` qualifies.
+  - Visitors matching either branch are in the audience.
+- Use the exact same normalized interest value in both branches (trimmed, lowercase) to avoid mismatches.
+- After creating the audience, verify with `get_target_audience` that the expression resolves to the same UI wording as your screenshot: **Current Page Query Contains `cid=<interest>`**.
 
 **Profile Attribute Audience** (`target_rule` source `profile`) — when the interest/segment signal is a Target profile attribute rather than a URL/referrer signal:
 - Operator: typically `equals`
@@ -80,6 +112,27 @@ To add more audience/offer pairs to an existing activity later, use `add_activit
 ## Activity States
 
 `saved` (draft) → `approved` (live) → `paused` / `deactivated`
+
+## Final User Summary Contract (Personalization Journeys)
+
+For AEM + Target personalization journeys, the final assistant response must always include a compact summary table and must not wait for the user to ask for links explicitly.
+
+Required rows in that final table:
+- `AEM Page` — include the authored/published page URL.
+- `Target Activity` — include activity name plus canonical URL.
+
+### Canonical Target Activity URL (required)
+
+Use the Experience Cloud canonical URL format based on org + activity id:
+
+`https://experience.adobe.com/#/@<TARGET_ORG>/target/activities/activity-details/<activity-type>/<activity-id>/overview`
+
+- XT activity type segment: `experience_targeting`
+- A/B activity type segment: `ab`
+- Use `activity-id` from `create_xt_activity` / `create_ab_activity` response, or fetch via `get_activity` if only name is available.
+- Do **not** output legacy/non-canonical authoring URLs such as `https://<org>.experiencecloud.adobe.com/content/mac/.../activities.html#edit/...`.
+
+If `TARGET_ORG` is not present in context, report the activity id and name and ask for org once; then render the canonical URL in the same turn when provided.
 
 ## Example — `create_xt_activity` call shape
 
