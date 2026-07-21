@@ -26,10 +26,11 @@ Create and manage Adobe Target activities using the installed **Adobe Target MCP
 
 Two ways audiences get built in these demos — pick based on what the requirement actually says, don't assume:
 
-**Rule-based Audience** (`target_rule` source `page`, `referring`, or `landingPage`) — for page/promotion personalization where there's no profile record, just an interest/segment keyword (e.g. "audience interested in painting"):
+**Rule-based Audience** (`target_rule` source `page`, `referring`, or `landingPage`) — for page/promotion personalization where there's no profile record, just an interest/segment keyword (e.g. "audience interested in boxing"):
 - Match on current/referring/landing page URL, domain, path, or query **containing** the keyword
 - Operator: `contains` (or `containsIgnoreCase`)
-- Example `target_rule`: `{"page": {"url": {"contains": ["painting"]}}}`
+- In the Target UI this is built under **Site Pages → Previous Page → URL → Contains** (matches the *referring* page, not the current page)
+- Example `target_rule`: `{"referring": {"url": {"contains": ["boxing"]}}}`
 
 **Profile Attribute Audience** (`target_rule` source `profile`) — when the interest/segment signal is a Target profile attribute rather than a URL/referrer signal:
 - Operator: typically `equals`
