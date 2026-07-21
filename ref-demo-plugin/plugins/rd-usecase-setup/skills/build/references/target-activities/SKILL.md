@@ -26,33 +26,15 @@ Create and manage Adobe Target activities using the installed **Adobe Target MCP
 
 Two ways audiences get built in these demos — pick based on what the requirement actually says, don't assume:
 
-**Rule-based Audience** (`target_rule` source `page`, `referring`, or `landingPage`) — for page/promotion personalization where there's no profile record, just an interest/segment keyword (e.g. "audience interested in `<interest>`"):
-
-> `<interest>` below is always the actual interest/segment keyword supplied in the conversation — normalize it (trimmed, lowercase) and substitute it into every branch. Never hardcode a literal keyword from these examples.
-
-**Option A — Single condition (default).** Use this unless the requirement specifically calls for the fallback below. Previous page URL contains the interest keyword:
-- In the Target UI: **Site Pages → Previous Page → URL → Contains** (Case Sensitive off)
-- `target_rule`:
-
-```json
-{
-  "referring": {
-    "url": {
-      "containsIgnoreCase": ["<interest>"]
-    }
-  }
-}
-```
-
-**Option B — OR / cid-query fallback.** Use when the previous-page referrer may not be reliably present (direct traffic, dark social, no-referrer navigation) or the interest is also signaled via a tracked campaign query param — pairs the previous-page condition with a current-page `cid=<interest>` query match so either signal qualifies:
-- Logical `or` with exactly two branches:
-  - Previous page URL contains the interest keyword (`referring.url.containsIgnoreCase`)
-  - Current page query contains `cid=<interest>` (`page.query.containsIgnoreCase`)
+**Rule-based Audience** (`target_rule` source `page`, `referring`, or `landingPage`) — for page/promotion personalization where there's no profile record, just an interest/segment keyword (e.g. "audience interested in boxing"):
+- Use a logical `or` with exactly two branches for this use case:
+  - Previous page URL contains the interest keyword (`referring.url.contains` or `containsIgnoreCase`)
+  - Current page query contains `cid=<interest>` (`page.query.contains` or `containsIgnoreCase`)
 - In the Target UI this maps to:
   - **Site Pages → Previous Page → URL → Contains**
   - **OR**
   - **Site Pages → Current Page → Query → Contains `cid=<interest>`**
-- `target_rule`:
+- Production-ready `target_rule` template:
 
 ```json
 {
@@ -60,14 +42,14 @@ Two ways audiences get built in these demos — pick based on what the requireme
     {
       "referring": {
         "url": {
-          "containsIgnoreCase": ["<interest>"]
+          "containsIgnoreCase": ["boxing"]
         }
       }
     },
     {
       "page": {
         "query": {
-          "containsIgnoreCase": ["cid=<interest>"]
+          "containsIgnoreCase": ["cid=boxing"]
         }
       }
     }
@@ -75,13 +57,12 @@ Two ways audiences get built in these demos — pick based on what the requireme
 }
 ```
 
-- Interpretation:
-  - Any URL containing `<interest>` as the **previous page** qualifies.
-  - Any **current page** URL with `?cid=<interest>` qualifies.
+- Interpretation for the example above:
+  - `https://example.com/sale/boxing-gear` as the **previous page** qualifies.
+  - Any **current page** URL with `?cid=boxing` qualifies.
   - Visitors matching either branch are in the audience.
 - Use the exact same normalized interest value in both branches (trimmed, lowercase) to avoid mismatches.
-
-For either option, after creating the audience, verify with `get_target_audience` that the expression resolves to the expected UI wording.
+- After creating the audience, verify with `get_target_audience` that the expression resolves to the same UI wording as your screenshot: **Current Page Query Contains `cid=<interest>`**.
 
 **Profile Attribute Audience** (`target_rule` source `profile`) — when the interest/segment signal is a Target profile attribute rather than a URL/referrer signal:
 - Operator: typically `equals`
