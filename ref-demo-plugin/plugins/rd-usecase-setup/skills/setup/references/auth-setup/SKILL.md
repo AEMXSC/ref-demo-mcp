@@ -36,14 +36,17 @@ Check `.env` for `AEM_HOST` and `TARGET_ORG`.
 
 **Do not proceed to Step 2 until the user has explicitly confirmed** — either by supplying fresh values or confirming the existing ones.
 
-### Step 1b: Load or collect GitHub credentials (for `site-ops`)
+### Step 1b: Verify GitHub access (for `site-ops`) — connector first, PAT as backup
 
-Only needed when the session will do site/git operations (`site-ops` domain). Check `.env` for `GITHUB_OWNER` and `GITHUB_TOKEN`.
+Only needed when the session will do site/git operations (`site-ops` domain). `github-mcp` is a normal OAuth connector (no static token wired into `plugin.json`) — prefer it, the same way `adobe-experience-manager`/`adobe-target-mcp` are handled in Steps 2/4.
 
-- **Not present / empty:** prompt for `GITHUB_OWNER` (the org or user account; if the PAT sees multiple orgs, the `create-eds-site` skill presents a picker) and `GITHUB_TOKEN` (a **classic** GitHub PAT with `repo` scope — needed so `github-mcp` and the `gh-site` helper can read/write the repo and attach the `aem-code-sync` app). Write them to `.env`.
-- **Already present:** show `GITHUB_OWNER` and a **masked** `GITHUB_TOKEN`, and ask the user to confirm.
+1. Call a lightweight `github-mcp` tool (e.g. whichever "who am I" / list-repos equivalent it exposes). If it succeeds, that covers every `github-mcp`-backed operation — **do not** ask for a PAT on the strength of this alone.
+2. Regardless of the connector's state, check whether the session will also need `git-operations`' REST fallback (`gh-site` — covers `generate`/`installations`/`attach`/`preview`, endpoints `github-mcp` does not expose as tools). That script makes raw `curl` calls and has no access to the connector's OAuth session, so it always needs a real classic PAT:
+   - **`.env` already has `GITHUB_OWNER`/`GITHUB_TOKEN`:** show `GITHUB_OWNER` and a **masked** `GITHUB_TOKEN`, ask the user to confirm.
+   - **Not present / empty:** prompt for `GITHUB_OWNER` (the org or user account; if the PAT sees multiple orgs, `create-eds-site` presents a picker) and `GITHUB_TOKEN` (a **classic** PAT with `repo` scope), write them to `.env`.
+3. If the `github-mcp` connector call in step 1 fails, tell the user: *the "GitHub" connector needs to be authorized via claude.ai connector settings (or `/mcp` in an interactive session)* — same pattern as AEM/Target, no token prompt for this path. The PAT collected in step 2 still covers the `gh-site` fallback in the meantime, so site creation isn't blocked on the connector alone.
 
-`GITHUB_TOKEN` is wired into the `github-mcp` config as `Authorization: Bearer ${GITHUB_TOKEN}` — never echo, log, or commit it (`.env` is git-ignored).
+Never echo, log, or commit `GITHUB_TOKEN` (`.env` is git-ignored).
 
 ### Step 2: Verify the AEM MCP connector
 
@@ -79,7 +82,8 @@ Both are one-time, manual, admin-console/repo steps outside this skill's reach. 
 | Check | Status | Message |
 |-------|--------|---------|
 | `.env` values confirmed | ✅/❌ | `AEM_HOST` / `TARGET_ORG` as confirmed in Step 1 |
-| GitHub creds confirmed (site-ops only) | ✅/❌ | `GITHUB_OWNER` and masked `GITHUB_TOKEN` as confirmed in Step 1b |
+| GitHub MCP connector authorized (site-ops only) | ✅/❌ | Result of the Step 1b connector check |
+| GitHub PAT confirmed — `gh-site` fallback (site-ops only) | ✅/❌ | `GITHUB_OWNER` and masked `GITHUB_TOKEN` as confirmed in Step 1b |
 | AEM MCP connector authorized | ✅/❌ | Result of `list-aem-environments`, incl. any `AEM_HOST` mismatch |
 | AEM environment awake | ✅/❌ | Result of the `read-api` probe |
 | Target MCP connector authorized | ✅/❌ | Result of the lightweight list call |

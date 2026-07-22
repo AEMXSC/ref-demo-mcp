@@ -28,13 +28,17 @@ The git/GitHub layer for `site-ops`. Called by [`create-eds-site`](../create-eds
 
 ## Backend
 
-**Default: `github-mcp`** (already registered in this plugin's `.claude-plugin/plugin.json`,
-authorized with `${GITHUB_TOKEN}` via its `Authorization` header). Use its tools for
-repo/contents operations when available.
+**Default: `github-mcp`** (already registered in this plugin's `.claude-plugin/plugin.json`
+as a plain OAuth connector — authorize it once via claude.ai connector settings, same as
+`adobe-experience-manager`/`adobe-target-mcp`; no PAT is wired into its config). Use its
+tools for repo/contents operations when available.
 
-**REST-only fallback: `scripts/gh-site`** — a POSIX `sh` + `curl` helper (no npm
-deps) for the endpoints `github-mcp` does not expose (template generate,
-installations, attach, preview). It reads `GITHUB_TOKEN`/`GITHUB_OWNER` from `.env`.
+**PAT-backed fallback: `scripts/gh-site`** — a POSIX `sh` + `curl` helper (no npm
+deps) for the endpoints `github-mcp` does not expose as tools (template generate,
+installations, attach, preview). These are raw REST calls with no access to the
+connector's OAuth session, so this path always needs a real classic PAT — it reads
+`GITHUB_TOKEN`/`GITHUB_OWNER` from `.env` (collected/confirmed by `auth-setup` Step 1b
+as a backup credential, not the primary auth path).
 
 **Reuse alternative:** where the **aem-forms** plugin is installed and the user
 prefers a sandboxed clone for committing `fstab.yaml`/`paths.json`, its

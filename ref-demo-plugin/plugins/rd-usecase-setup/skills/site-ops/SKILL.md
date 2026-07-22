@@ -52,7 +52,7 @@ metadata:
 
 ## Guard Policies
 
-> **Setup required:** workspace must be initialized and `GITHUB_TOKEN` (classic PAT, `repo` scope) + `GITHUB_OWNER` must be present/confirmed in `.env` (see `setup` › `auth-setup`) before any site or git operation.
+> **Setup required:** workspace must be initialized and the `github-mcp` connector authorized (preferred) and/or `GITHUB_TOKEN` (classic PAT, `repo` scope, backup for the `gh-site` fallback) + `GITHUB_OWNER` present/confirmed in `.env` (see `setup` › `auth-setup`) before any site or git operation.
 >
 > **Never echo or commit the PAT.** `.env` is git-ignored; the token is masked in all output and wired into the `github-mcp` config.
 >

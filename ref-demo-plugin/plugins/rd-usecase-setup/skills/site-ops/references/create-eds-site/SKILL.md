@@ -44,8 +44,10 @@ operate on. All git/GitHub calls go through [`git-operations`](../git-operations
 
 ## Prerequisites
 
-Workspace initialized and `.env` has confirmed `GITHUB_TOKEN` (classic PAT, `repo` scope),
-`GITHUB_OWNER`, and `AEM_HOST` — see `setup` › `auth-setup`. If missing, route there first.
+Workspace initialized, the `github-mcp` connector authorized (preferred path), `AEM_HOST`
+confirmed, and — as backup for `git-operations`' `gh-site` fallback — `.env` has confirmed
+`GITHUB_TOKEN` (classic PAT, `repo` scope) and `GITHUB_OWNER` — see `setup` › `auth-setup`.
+If missing, route there first.
 
 ---
 
