@@ -82,10 +82,11 @@ content/aem/
 6. **Verify the page URL exists before reporting it** — run a lightweight `read-api` check against that exact URL path and only report it if it resolves (non-404). If the check returns 404, do not present the link as final; reconcile the path first.
 
 Page URL construction rules for summaries:
-- Always preserve the exact full AEM repository path returned/validated by AEM (for example including `language-masters` when present).
-- Do not split host and path into separate table cells/phrases.
+- **Host = the confirmed `AEM_HOST` value from `.env`** (set/confirmed by `auth-setup`) — never a different, example, or synthesized host.
+- **Path = the exact full AEM page path returned/validated by AEM** (for example including `language-masters` when present), plus the `.html` extension.
+- The reported URL is always `AEM_HOST` + path concatenated into one value — do not split host and path into separate table cells/phrases.
 - Do not synthesize or shorten paths based on assumptions (locale shortcuts, inferred sections, etc.).
-- Preferred example shape: `https://author-<id>.adobeaemcloud.com/content/<site>/language-masters/en/<page>.html`
+- Example shape: `<AEM_HOST>/content/<site>/language-masters/en/<page>.html` (e.g. `https://author-<id>.adobeaemcloud.com/content/<site>/language-masters/en/<page>.html` when `AEM_HOST` is that author host).
 
 ### Promotion Fragments — AEM Sites + Target (multi-variant blocks)
 
@@ -95,6 +96,7 @@ Used for AEM Sites/EDS personalization demos where a page block (e.g. a "Promoti
 
 1. **`lookup-api-spec`** — search for the content fragment creation recipe (e.g. `spec.search('create content fragment')`).
 2. **Find a matching image for each variant fragment** — for each audience variant (e.g. `promo-painting`), search the AEM DAM for an asset matching that audience's interest keyword (e.g. "painting"): `lookup-api-spec` to find the asset-search recipe (`spec.search('search dam assets')` / `spec.search('query assets by metadata')`), then `read-api` to run the query against asset name/title/tags/metadata containing the keyword. **If the search returns more than one plausible match, or none, ask the user to pick/confirm** — don't author a wrong or missing image silently. Capture the chosen asset's path.
+   - **If no DAM match exists and image generation (e.g. Adobe Firefly) is being used to produce one, and it fails because Firefly credits are missing/exhausted** — don't block the whole fragment on this. Ask the user to choose: **(a)** use a default/placeholder image (confirm which existing DAM asset to reuse as the default), or **(b)** leave `bannerImage` blank for now and continue authoring the rest of the fragment. Record whichever choice was made so it can be revisited later.
 3. **`write-api`** (dry-run → `confirmed: true`) — create the Block Content Fragment (e.g. `promo-default`) plus one sibling variant fragment per audience (e.g. `promo-painting`), **against the `CTA` Content Fragment Model** (fixed — not "or equivalent"). Fields: title, subtitle, description, **banner image (the DAM asset path found/confirmed in the previous step)**, CTA label, CTA URL.
 4. **Publish each fragment** — `lookup-api-spec` for the publish/activate recipe, then `write-api` (dry-run → `confirmed: true`).
 5. **Export fragments to Target** — call the dedicated `export_content_fragment_to_target` MCP tool (see "Exporting Content Fragments to Target" below) — **not** the generic AEM connector's `write-api`. Capture each fragment's `targetOfferID` from the response and store it in that fragment's `metadata.json` so `target-activities` doesn't need to look it up separately.

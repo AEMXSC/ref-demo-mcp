@@ -122,8 +122,8 @@ Required rows in that final table:
 - `Target Activity` — include activity name plus canonical URL.
 
 `AEM Page` row requirements:
-- Use the exact validated AEM path (including segments such as `language-masters` when present).
-- Include the full URL in one value, e.g. `https://author-<id>.adobeaemcloud.com/content/<site>/language-masters/en/<page>.html`.
+- URL = the confirmed `AEM_HOST` (from `.env`, per `auth-setup`) concatenated with the exact validated AEM path (including segments such as `language-masters` when present) — see `aem-content`'s page URL construction rules.
+- Include the full URL in one value, e.g. `<AEM_HOST>/content/<site>/language-masters/en/<page>.html`; never a different or example host.
 - Verify it resolves before reporting (non-404 check via AEM connector flow in `aem-content`).
 
 ### Canonical Target Activity URL (required)
