@@ -43,7 +43,7 @@
     },
     "github-mcp": {
       "type": "http",
-      "url": "https://api.github.com/mcp"
+      "url": "https://api.githubcopilot.com/mcp/"
     },
     "adobe-creativity-mcp": {
       "type": "http",
