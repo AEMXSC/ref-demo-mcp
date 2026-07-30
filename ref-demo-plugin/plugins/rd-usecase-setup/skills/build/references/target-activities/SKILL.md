@@ -104,6 +104,13 @@ Used when personalizing an AEM Sites page block (e.g. a Promotion block) backed 
 2. **Create audience(s)** — `create_target_audience`, per the Rule-based or Profile Attribute pattern above (one per variant fragment / interest segment)
 3. **Confirm fragments are already exported to Target** — via `aem-content`'s `.cfm.targetexport` export step; if not yet exported, route back to that skill first. That step returns each fragment's `targetOfferID` directly in its response and stores it in the fragment's `metadata.json` — use it as `offer_id` below with no separate lookup. Only fall back to `list_target_offers`/`get_target_offer` if the ID wasn't captured at export time.
 4. **`create_xt_activity`** — `experiences: [{ name, audience_id, offer_id }, ...]`, one per audience/variant. **`mbox_name` must match the page block's configured Target Mbox Name exactly** (default `target-global-mbox`) — mismatched mbox names are the most common reason a working activity never fires. **Don't add an "All Visitors" fallback experience** — visitors who match no audience simply see the page's native Block Content Fragment, since Target only intervenes for matched audiences.
+
+   **Default goal for XT activities** — unless the requirement specifies a different goal, use:
+   - "What do you want to measure with this activity?" → **Conversion**
+   - "What action was taken by your audience to indicate your goal has been reached?" → **Viewed an mbox**, scoped to **display mboxes** (not a specific named mbox)
+   - `goal: { "type": "conversion", "success_event": "mbox_shown" }` — `mbox_shown` = "Viewed" (default); the only other option is `mbox_clicked` = "Clicked"
+
+   **Default priority for XT activities** — pass `priority: 10` explicitly; the backend default is `5` when `priority` is omitted.
 5. **`update_activity_state`** — activate (`state: "approved"`); the tool itself verifies the activity is complete before allowing this
 6. **Validate** — `get_activity` to confirm state, and `list_target_mboxes` to confirm the mbox name matches the block's configuration exactly
 
@@ -148,7 +155,8 @@ If `TARGET_ORG` is not present in context, report the activity id and name and a
     { "name": "Painting audience", "audience_id": 123, "offer_id": 456 }
   ],
   "mbox_name": "target-global-mbox",
-  "goal": { "type": "conversion", "success_event": "mbox_clicked" }
+  "goal": { "type": "conversion", "success_event": "mbox_shown" },
+  "priority": 10
 }
 ```
 
