@@ -37,34 +37,20 @@ Check `.env` for `AEM_HOST` and `TARGET_ORG`.
 
 **Do not proceed to Step 2 until the user has explicitly confirmed** — either by supplying fresh values or confirming the existing ones.
 
-### Step 1b: Verify GitHub access (for `site-ops`) — device-flow login first, PAT as backup
+### Step 1b: Load or collect GitHub credentials (for `site-ops`)
 
-Only needed when the session will do site/git operations (`site-ops` domain). `github-mcp` is
-this project's own hosted MCP server (same deployment as `export-cf-to-target`) — it owns the
-GitHub OAuth handshake itself via a device-authorization flow, rather than relying on a
-platform-level OAuth connector or a pasted token.
+Only needed when the session will do site/git operations (`site-ops` domain). Check `.env` for `GITHUB_OWNER` and `GITHUB_TOKEN`.
 
-1. Call `github_login`. Show the user the returned `verification_uri` + `user_code` and ask
-   them to open the link and enter the code — this is a real GitHub login screen, not a text
-   field for a token. Keep the returned `session_id`.
-2. Once the user confirms they've entered the code, call `github_login_status` with that
-   `session_id`. If it reports still-pending, wait briefly and call it again — don't loop
-   rapidly. On success this covers every `github_*`-tool operation for the rest of the
-   session; **do not** also ask for a PAT on the strength of this alone.
-3. Separately, check whether the session will also need `git-operations`' REST fallback
-   (`gh-site` — same operations as the `github_*` tools, used only if device-flow login can't
-   be completed). That script makes raw `curl` calls with a real classic PAT, so only collect
-   it if `github_login`/`github_login_status` failed or the user prefers to keep using a PAT:
-   - **`.env` already has `GITHUB_OWNER`/`GITHUB_TOKEN`:** show `GITHUB_OWNER` and a **masked** `GITHUB_TOKEN`, ask the user to confirm.
-   - **Not present / empty:** prompt for `GITHUB_OWNER` (the org or user account; if the account sees multiple orgs, `create-eds-site` presents a picker) and `GITHUB_TOKEN` (a **classic** PAT with `repo` scope), write them to `.env`.
+- **Not present / empty:** prompt for `GITHUB_OWNER` (the org or user account; if the PAT sees multiple orgs, the `create-eds-site` skill presents a picker) and `GITHUB_TOKEN` (a **classic** GitHub PAT with `repo` scope — needed so `github-mcp` and the `gh-site` helper can read/write the repo and attach the `aem-code-sync` app). Write them to `.env`.
+- **Already present:** show `GITHUB_OWNER` and a **masked** `GITHUB_TOKEN`, and ask the user to confirm.
 
-Never echo, log, or commit `GITHUB_TOKEN` (`.env` is git-ignored).
+`GITHUB_TOKEN` is wired into the `github-mcp` config as `Authorization: Bearer ${GITHUB_TOKEN}` — never echo, log, or commit it (`.env` is git-ignored).
 
 ### Step 2: Verify the AEM MCP connector
 
 Call `list-aem-environments` (no params). If it errors or returns nothing usable, tell the user: *the "Adobe Experience Manager" connector needs to be authorized via claude.ai connector settings (or `/mcp` in an interactive session)* — don't ask them for tokens directly. If it succeeds, check whether the confirmed `AEM_HOST` actually appears among the discovered environments — if not, tell the user about the mismatch and ask them to reconcile it (correct `.env`, or confirm that environment genuinely isn't reachable via this connector).
 
-### Step 2a: Propose the selected environment/org and ask for confirmation
+### Step 2b: Propose the selected environment/org and ask for confirmation
 
 Before proceeding, present the values the agent is planning to use and ask the user to confirm or change them:
 
@@ -111,8 +97,7 @@ Both are one-time, manual, admin-console/repo steps outside this skill's reach. 
 | Check | Status | Message |
 |-------|--------|---------|
 | `.env` values confirmed | ✅/❌ | `AEM_HOST` / `TARGET_ORG` as confirmed in Step 1 |
-| GitHub device-flow login complete (site-ops only) | ✅/❌ | Result of `github_login` + `github_login_status` in Step 1b |
-| GitHub PAT confirmed — `gh-site` fallback (site-ops only) | ✅/❌ | `GITHUB_OWNER` and masked `GITHUB_TOKEN` as confirmed in Step 1b |
+| GitHub creds confirmed (site-ops only) | ✅/❌ | `GITHUB_OWNER` and masked `GITHUB_TOKEN` as confirmed in Step 1b |
 | AEM MCP connector authorized | ✅/❌ | Result of `list-aem-environments`, incl. any `AEM_HOST` mismatch |
 | AEM environment awake | ✅/❌ | Result of the `read-api` probe |
 | Target MCP connector authorized | ✅/❌ | Result of the lightweight list call |
