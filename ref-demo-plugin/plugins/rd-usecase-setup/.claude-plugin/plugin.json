@@ -5,7 +5,7 @@
   "author": {
     "name": "Adobe"
   },
-  "repository": "https://github.com/Adobe-DemoPOC/rd-ai-plugin",
+  "repository": "https://github.com/AEMXSC/ref-demo-mcp",
   "license": "Apache-2.0",
   "skills": [
     "./skills/reference-demo-orchestrator",
@@ -43,7 +43,7 @@
     },
     "github-mcp": {
       "type": "http",
-      "url": "https://api.githubcopilot.com/mcp/"
+      "url": "https://3635370-rdmcp-stage.adobeioruntime.net/api/v1/web/rd-mcp/mcp-server"
     },
     "adobe-creativity-mcp": {
       "type": "http",
@@ -51,11 +51,10 @@
     }
   },
   "keywords": [
-    "adobe",
-    "aem",
-    "target",
-    "mcp",
-    "content-management",
-    "personalization"
+    "eds-demo-framework",
+    "reusable-eds-demo",
+    "reference-demo",
+    "eds-multisolution-reusable-demo",
+    "reference-demo-framework"
   ]
 }

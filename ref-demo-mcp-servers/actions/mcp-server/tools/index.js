@@ -22,8 +22,27 @@ const echo = require('./echo')
 const calculator = require('./calculator')
 const weather = require('./weather')
 const exportContentFragmentToTarget = require('./export-content-fragment-to-target')
+const githubLogin = require('./github-login')
+const githubLoginStatus = require('./github-login-status')
+const githubListRepos = require('./github-list-repos')
+const githubGenerateRepo = require('./github-generate-repo')
+const githubInstallation = require('./github-installation')
+const githubAttach = require('./github-attach')
+const githubPreview = require('./github-preview')
 
-const tools = [echo, calculator, weather, exportContentFragmentToTarget]
+const tools = [
+    echo,
+    calculator,
+    weather,
+    exportContentFragmentToTarget,
+    githubLogin,
+    githubLoginStatus,
+    githubListRepos,
+    githubGenerateRepo,
+    githubInstallation,
+    githubAttach,
+    githubPreview
+]
 
 /**
  * Register all tools with the MCP server

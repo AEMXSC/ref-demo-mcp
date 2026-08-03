@@ -116,9 +116,12 @@ Used for AEM Sites/EDS personalization demos where a page block (e.g. a "Promoti
 - Failure: `{"path": "/content/dam/promotions/team-alpha", "error": "Unable to connect to Target"}`
 
 1. Call `export_content_fragment_to_target` with the block's fragment folder as `export_path`, all variant fragment paths as `fragment_paths`, and `AEM_HOST` from `.env` as `aem_host`.
-2. **Check every entry in the response array individually** — a successful call can still contain per-fragment `error` entries; don't assume every fragment exported just because the call succeeded.
-3. **Store each successful `targetOfferID`** in that fragment's local `metadata.json` — this is the `offer_id` `target-activities` needs, with no separate `list_target_offers` lookup required.
-4. **Verify the resulting offer's source in Target reads "Adobe Experience Manager"** — if it reads "Adobe Target API" instead, something bypassed this tool; don't proceed to build the activity on a wrongly-sourced offer.
+2. **Retry transient failures** — if the call fails due to timeout, network/transient connector errors, or 5xx responses, retry up to **3 total attempts** before giving up.
+3. **Do not retry non-transient failures** — for 4xx validation/auth/configuration errors, stop immediately and surface the exact fix needed.
+4. **Check every entry in the response array individually** — a successful call can still contain per-fragment `error` entries; don't assume every fragment exported just because the call succeeded.
+5. **For partial success, retry only failed fragment paths** (up to the same 3-attempt cap), then report final per-fragment status clearly.
+6. **Store each successful `targetOfferID`** in that fragment's local `metadata.json` — this is the `offer_id` `target-activities` needs, with no separate `list_target_offers` lookup required.
+7. **Verify the resulting offer's source in Target reads "Adobe Experience Manager"** — if it reads "Adobe Target API" instead, something bypassed this tool; don't proceed to build the activity on a wrongly-sourced offer.
 
 **Requires** `AEM_HOST` in `.env` (confirmed by `auth-setup`). Authentication for the actual AEM call is handled entirely by the gateway-forwarded IMS token — nothing to configure here.
 

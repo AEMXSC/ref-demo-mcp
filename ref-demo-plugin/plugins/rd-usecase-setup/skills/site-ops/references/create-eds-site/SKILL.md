@@ -26,7 +26,7 @@ operate on. All git/GitHub calls go through [`git-operations`](../git-operations
 
 | Term | Meaning |
 |------|---------|
-| **GitHub org** (`GITHUB_OWNER`) | Selectable — if the PAT sees multiple orgs, the user picks one |
+| **GitHub org** (`GITHUB_OWNER`) | Selectable — if the logged-in account sees multiple orgs, the user picks one |
 | **repo name** | Always **equal to the site name** |
 | **site name** | Provided by the user (asked if missing) |
 | **content source** | AEM Author (`AEM_HOST`) |
@@ -44,10 +44,10 @@ operate on. All git/GitHub calls go through [`git-operations`](../git-operations
 
 ## Prerequisites
 
-Workspace initialized, the `github-mcp` connector authorized (preferred path), `AEM_HOST`
-confirmed, and — as backup for `git-operations`' `gh-site` fallback — `.env` has confirmed
-`GITHUB_TOKEN` (classic PAT, `repo` scope) and `GITHUB_OWNER` — see `setup` › `auth-setup`.
-If missing, route there first.
+Workspace initialized, GitHub device-flow login completed via `github_login`/
+`github_login_status` (preferred path), `AEM_HOST` confirmed, and — as backup for
+`git-operations`' `gh-site` fallback — `.env` has confirmed `GITHUB_TOKEN` (classic PAT,
+`repo` scope) and `GITHUB_OWNER` — see `setup` › `auth-setup`. If missing, route there first.
 
 ---
 
@@ -62,7 +62,7 @@ If the user did not give a site name or a clear new-vs-existing intent, ask:
 ### B2 — Existing site
 
 1. Resolve `GITHUB_OWNER` (see *Owner selection* below).
-2. `git-operations` → `list-repos` for that owner; present repos that look like EDS sites (contain `fstab.yaml`).
+2. `git-operations` → `github_list_repos` (or `gh-site list-repos` fallback) for that owner; present repos that look like EDS sites (contain `fstab.yaml`).
 3. User picks one. **Skip all repo/app-creation steps** — proceed to operate on the chosen site.
 
 ### B3 — New site (only when the user explicitly wants a new site)
@@ -72,7 +72,7 @@ If the user did not give a site name or a clear new-vs-existing intent, ask:
    - **(a) reuse** the existing one → go to **B2**, or
    - **(b) create new** → require a **unique** name and confirm it (re-check until free).
 3. **Template** — show the list from [`assets/site-templates.md`](assets/site-templates.md); user picks one.
-4. **Create repo** — `git-operations` → `generate` (repo from the chosen template into `GITHUB_OWNER/<site>`).
+4. **Create repo** — `git-operations` → `github_generate_repo` (or `gh-site generate` fallback) (repo from the chosen template into `GITHUB_OWNER/<site>`).
 5. **UE config** — commit via `git-operations`:
    - `fstab.yaml` → set the mountpoint URL `https://<AEM_HOST>/bin/franklin.delivery/<GITHUB_OWNER>/<repo>/main`
      (XXX = `AEM_HOST`, YYY = `GITHUB_OWNER`, ZZZ = `repo`).
@@ -83,8 +83,8 @@ If the user did not give a site name or a clear new-vs-existing intent, ask:
    > Install **aem-code-sync** at https://github.com/apps/aem-code-sync and grant it access to `<GITHUB_OWNER>/<repo>`. Tell me when done.
 
    Wait for confirmation.
-7. **Configure app → repo** (separate phase, **after** install) — `git-operations` → `installation` (find `aem-code-sync` installation id) then `attach` (PUT repo into it). If it cannot be done automatically, prompt the user to add the repo under the app's **Repository access** dropdown and save, then continue.
-8. **Validate** — `git-operations` → `preview` on `https://main--<repo>--<GITHUB_OWNER>.aem.page`. **Done only when it returns 200.** Report the preview/live URLs.
+7. **Configure app → repo** (separate phase, **after** install) — `git-operations` → `github_installation` (find `aem-code-sync` installation id) then `github_attach` (PUT repo into it) — `gh-site installation`/`gh-site attach` as fallback. If it cannot be done automatically, prompt the user to add the repo under the app's **Repository access** dropdown and save, then continue.
+8. **Validate** — `git-operations` → `github_preview` (or `gh-site preview` fallback) on `https://main--<repo>--<GITHUB_OWNER>.aem.page`. **Done only when it returns 200.** Report the preview/live URLs.
 
 ### B4 — Throughout
 
@@ -95,9 +95,10 @@ If the user did not give a site name or a clear new-vs-existing intent, ask:
 
 ## Owner selection (`GITHUB_OWNER`)
 
-If `GITHUB_OWNER` is already confirmed in `.env`, use it. Otherwise `git-operations`
-lists the authenticated user plus `GET /user/orgs`; if more than one, present a
-picker; store the choice as `GITHUB_OWNER` in `.env`.
+If `GITHUB_OWNER` is already confirmed in `.env`, use it. Otherwise, once `github_login`/
+`github_login_status` has completed (see `git-operations`), `github_list_repos`'s own
+`/user/orgs` check (or `gh-site orgs` fallback) lists the logged-in user plus their orgs;
+if more than one, present a picker; store the choice as `GITHUB_OWNER` in `.env`.
 
 ## Idempotency & resume (A7)
 

@@ -3,7 +3,9 @@ name: domain-registry
 description: >
   Domain registry and router for Reference Demo skills. Catalogs all domains
   and their skills. Routes user intents to the correct domain based on trigger
-  patterns. Triggers: which domain, which skill, what can you do, list skills.
+  patterns. Only activates when the prompt explicitly says "reference demo" or
+  "ref demo". Triggers: reference demo which domain, ref demo which skill,
+  reference demo what can you do, reference demo list skills.
 type: router
 license: Apache-2.0
 metadata:
@@ -35,11 +37,11 @@ Domains are skill containers. This registry catalogs all domains and provides in
 | 1 | `setup` | `workspace-init` | Initialize workspace and project structure | init, setup, workspace |
 | 2 | `setup` | `auth-setup` | Configure authentication and credentials | auth, credentials, token |
 | 3 | `setup` | `env-config` | Manage environment configuration | env, config, settings |
-| 4 | `build` | `aem-content` | Create and manage AEM content | aem, content, page |
-| 5 | `build` | `target-activities` | Create and manage Target activities | target, activity, test |
-| 6 | `site-ops` | `create-eds-site` | Create a new EDS UE site or select an existing one | site, new site, eds site, ue site, template |
-| 7 | `site-ops` | `git-operations` | Repo-from-template, commit/push, aem-code-sync install/attach, preview check | git, repo, clone, commit, push, aem-code-sync |
-| 8 | `notify` | `send-sms` | Send an SMS notification via a bundled script | sms, notify, text, alert |
+| 4 | `build` | `aem-content` | Create and manage AEM content | reference demo aem content, ref demo page |
+| 5 | `build` | `target-activities` | Create and manage Target activities | reference demo target activity, ref demo test |
+| 6 | `site-ops` | `create-eds-site` | Create a new EDS UE site or select an existing one | reference demo site, ref demo eds site, ref demo ue site, ref demo template |
+| 7 | `site-ops` | `git-operations` | Repo-from-template, commit/push, aem-code-sync install/attach, preview check | reference demo repo, ref demo commit, ref demo push, ref demo aem-code-sync |
+| 8 | `notify` | `send-sms` | Send an SMS notification via a bundled script | reference demo sms, ref demo notify, ref demo alert |
 
 ---
 
@@ -47,12 +49,12 @@ Domains are skill containers. This registry catalogs all domains and provides in
 
 | User Intent Pattern | Domain | Skills |
 |---------------------|--------|--------|
-| Setup, initialize, workspace, credentials, auth, config | `setup` | `workspace-init`, `auth-setup`, `env-config` |
-| Create AEM content, page, component | `build` | `aem-content` |
-| Create Target activity, A/B test, experiment | `build` | `target-activities` |
-| Create a new EDS/UE site, use an existing site, pick a site template | `site-ops` | `create-eds-site` |
-| Create repo from template, commit/push, install/attach aem-code-sync, check preview | `site-ops` | `git-operations` |
-| Send SMS, notify, text message, alert | `notify` | `send-sms` |
+| Reference demo setup, initialize, workspace, credentials, auth, config | `setup` | `workspace-init`, `auth-setup`, `env-config` |
+| Reference demo AEM content, page, component | `build` | `aem-content` |
+| Reference demo Target activity, A/B test, experiment | `build` | `target-activities` |
+| Reference demo new EDS/UE site, use an existing site, pick a site template | `site-ops` | `create-eds-site` |
+| Reference demo repo from template, commit/push, install/attach aem-code-sync, check preview | `site-ops` | `git-operations` |
+| Reference demo send SMS, notify, text message, alert | `notify` | `send-sms` |
 
 ---
 

@@ -24,6 +24,7 @@ AEM and Adobe Target operations mostly go through their installed MCP connectors
 4. **Verify by calling a real tool** — "authorized" means a real MCP call succeeds, not just that the connector is listed
 5. **Never prompt for AEM or IMS tokens** — the `export-cf-to-target` MCP reads the caller's IMS token from the request's `Authorization` header (gateway-injected); the only real credential this skill still handles is `GITHUB_TOKEN`, which must be masked in all output
 6. **Mask real credentials in all output** — `GITHUB_TOKEN` is a real credential, unlike `AEM_HOST`/`TARGET_ORG`/`GITHUB_OWNER`
+7. **Confirm suggested values before collecting new input** — when values can be inferred from `.env` and connector discovery, propose them first and let the user confirm or override
 
 ## Workflow
 
@@ -36,21 +37,48 @@ Check `.env` for `AEM_HOST` and `TARGET_ORG`.
 
 **Do not proceed to Step 2 until the user has explicitly confirmed** — either by supplying fresh values or confirming the existing ones.
 
-### Step 1b: Verify GitHub access (for `site-ops`) — connector first, PAT as backup
+### Step 1b: Verify GitHub access (for `site-ops`) — device-flow login first, PAT as backup
 
-Only needed when the session will do site/git operations (`site-ops` domain). `github-mcp` is a normal OAuth connector (no static token wired into `plugin.json`) — prefer it, the same way `adobe-experience-manager`/`adobe-target-mcp` are handled in Steps 2/4.
+Only needed when the session will do site/git operations (`site-ops` domain). `github-mcp` is
+this project's own hosted MCP server (same deployment as `export-cf-to-target`) — it owns the
+GitHub OAuth handshake itself via a device-authorization flow, rather than relying on a
+platform-level OAuth connector or a pasted token.
 
-1. Call a lightweight `github-mcp` tool (e.g. whichever "who am I" / list-repos equivalent it exposes). If it succeeds, that covers every `github-mcp`-backed operation — **do not** ask for a PAT on the strength of this alone.
-2. Regardless of the connector's state, check whether the session will also need `git-operations`' REST fallback (`gh-site` — covers `generate`/`installations`/`attach`/`preview`, endpoints `github-mcp` does not expose as tools). That script makes raw `curl` calls and has no access to the connector's OAuth session, so it always needs a real classic PAT:
+1. Call `github_login`. Show the user the returned `verification_uri` + `user_code` and ask
+   them to open the link and enter the code — this is a real GitHub login screen, not a text
+   field for a token. Keep the returned `session_id`.
+2. Once the user confirms they've entered the code, call `github_login_status` with that
+   `session_id`. If it reports still-pending, wait briefly and call it again — don't loop
+   rapidly. On success this covers every `github_*`-tool operation for the rest of the
+   session; **do not** also ask for a PAT on the strength of this alone.
+3. Separately, check whether the session will also need `git-operations`' REST fallback
+   (`gh-site` — same operations as the `github_*` tools, used only if device-flow login can't
+   be completed). That script makes raw `curl` calls with a real classic PAT, so only collect
+   it if `github_login`/`github_login_status` failed or the user prefers to keep using a PAT:
    - **`.env` already has `GITHUB_OWNER`/`GITHUB_TOKEN`:** show `GITHUB_OWNER` and a **masked** `GITHUB_TOKEN`, ask the user to confirm.
-   - **Not present / empty:** prompt for `GITHUB_OWNER` (the org or user account; if the PAT sees multiple orgs, `create-eds-site` presents a picker) and `GITHUB_TOKEN` (a **classic** PAT with `repo` scope), write them to `.env`.
-3. If the `github-mcp` connector call in step 1 fails, tell the user: *the "GitHub" connector needs to be authorized via claude.ai connector settings (or `/mcp` in an interactive session)* — same pattern as AEM/Target, no token prompt for this path. The PAT collected in step 2 still covers the `gh-site` fallback in the meantime, so site creation isn't blocked on the connector alone.
+   - **Not present / empty:** prompt for `GITHUB_OWNER` (the org or user account; if the account sees multiple orgs, `create-eds-site` presents a picker) and `GITHUB_TOKEN` (a **classic** PAT with `repo` scope), write them to `.env`.
 
 Never echo, log, or commit `GITHUB_TOKEN` (`.env` is git-ignored).
 
 ### Step 2: Verify the AEM MCP connector
 
 Call `list-aem-environments` (no params). If it errors or returns nothing usable, tell the user: *the "Adobe Experience Manager" connector needs to be authorized via claude.ai connector settings (or `/mcp` in an interactive session)* — don't ask them for tokens directly. If it succeeds, check whether the confirmed `AEM_HOST` actually appears among the discovered environments — if not, tell the user about the mismatch and ask them to reconcile it (correct `.env`, or confirm that environment genuinely isn't reachable via this connector).
+
+### Step 2a: Propose the selected environment/org and ask for confirmation
+
+Before proceeding, present the values the agent is planning to use and ask the user to confirm or change them:
+
+- `Proposed AEM environment URL` — preferred order:
+  1. Existing confirmed `AEM_HOST` from `.env` if it is present in `list-aem-environments`
+  2. Otherwise, the best connector-discovered candidate from `list-aem-environments`
+- `Proposed Target org identifier` — current `TARGET_ORG` from `.env` (or previously confirmed session value)
+
+UX requirements:
+- Do not ask for fresh manual input first when a reasonable proposed value exists.
+- Show "confirm or provide a different value" choices for each.
+- If the user changes either value, update `.env` immediately and continue with the updated value.
+- If multiple AEM environments are available, show the proposed one and make it easy to switch.
+
 
 ### Step 3: Confirm the AEM environment is awake (not hibernated)
 
@@ -68,27 +96,30 @@ Before generating or executing any plan for a personalization journey (content-f
 
 UX requirement for this confirmation step:
 - Show both doc links in the **first** message where confirmation is requested (not only after the user selects "No / Don't know").
+- Ask this as a **single combined confirmation prompt** in plain language (not separate technical tabs/headers per prerequisite).
 - Use plain-language labels for options:
   - `Yes, both are already set up`
   - `No / Not sure (show me setup steps)`
+- If the user selects `No / Not sure`, show both doc links again in that same branch response.
 - Keep the technical details as secondary helper text only if needed:
   - "AEM and Adobe Target are already connected" corresponds to the AEM↔Target IMS integration prerequisite.
   - "Target library (at.js) is already included in your AEM EDS project" corresponds to replacing `/scripts/at-lsig.js` with the Target at.js library.
 
-Both are one-time, manual, admin-console/repo steps outside this skill's reach. If either isn't confirmed, **stop the whole journey here** — don't let it surface three steps later inside `aem-content`'s fragment-creation workflow.
+Both are one-time, manual, admin-console/repo steps outside this skill's reach. If either isn't confirmed, **pause the journey here** (status: blocked/waiting on user action) and do not continue to fragment export or Target activity creation until the user confirms completion.
 
 ### Step 6: Report status
 
 | Check | Status | Message |
 |-------|--------|---------|
 | `.env` values confirmed | ✅/❌ | `AEM_HOST` / `TARGET_ORG` as confirmed in Step 1 |
-| GitHub MCP connector authorized (site-ops only) | ✅/❌ | Result of the Step 1b connector check |
+| GitHub device-flow login complete (site-ops only) | ✅/❌ | Result of `github_login` + `github_login_status` in Step 1b |
 | GitHub PAT confirmed — `gh-site` fallback (site-ops only) | ✅/❌ | `GITHUB_OWNER` and masked `GITHUB_TOKEN` as confirmed in Step 1b |
 | AEM MCP connector authorized | ✅/❌ | Result of `list-aem-environments`, incl. any `AEM_HOST` mismatch |
 | AEM environment awake | ✅/❌ | Result of the `read-api` probe |
 | Target MCP connector authorized | ✅/❌ | Result of the lightweight list call |
 | AEM↔Target IMS integration confirmed (personalization journeys only) | ✅/❌ | User confirmation |
 | EDS at.js confirmed (personalization journeys only) | ✅/❌ | User confirmation |
+| Personalization journey state (if prereqs are not confirmed) | `Paused` | Waiting for user to complete setup docs and reconfirm |
 
 ## Notes
 

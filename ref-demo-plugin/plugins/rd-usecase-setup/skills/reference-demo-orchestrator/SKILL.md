@@ -6,8 +6,10 @@ description: >
   (references/domain-registry/SKILL.md). Routes user intents to plans (sequences
   of skill invocations), resolves each plan step to a domain/skill, and executes
   accordingly. When no plans exist, generates them from user requirements.
-  Triggers: plan, workflow, how to build, orchestrate, what skill, which skill,
-  next step, getting started, AEM, Target, setup, configure.
+  Only activates when the prompt explicitly says "reference demo" or "ref demo" —
+  do not trigger on bare product names like AEM or Target alone.
+  Triggers: reference demo, ref demo plan, ref demo workflow, reference demo AEM,
+  reference demo Target, reference demo setup, reference demo site, reference demo Personalization.
 type: router
 license: Apache-2.0
 metadata:

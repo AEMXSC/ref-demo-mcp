@@ -348,7 +348,7 @@ function handleOptionsRequest () {
 async function handleMcpRequest (params) {
     const server = createMcpServer()
     const body = parseRequestBody(params)
-    const requestAuth = { imsToken: getTokenFromRequest(params), userInfo: params.AUTH_USER_INFO }
+    const requestAuth = { imsToken: getTokenFromRequest(params), userInfo: params.AUTH_USER_INFO, githubOAuthClientId: params.GITHUB_OAUTH_CLIENT_ID }
 
     return runWithRequestAuth(requestAuth, () => handleMcpRequestInner(params, server, body))
 }

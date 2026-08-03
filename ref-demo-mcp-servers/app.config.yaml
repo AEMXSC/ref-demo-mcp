@@ -31,6 +31,9 @@ application:
               # Leave both unset for no authentication (development only)
               SERVICE_API_KEY: $SERVICE_API_KEY
               AUTH_VALIDATE_IMS: $AUTH_VALIDATE_IMS
+              # GitHub OAuth App client_id used by the github_login device-flow tool
+              # (this action owns the GitHub OAuth handshake itself - see github-token-store.js)
+              GITHUB_OAUTH_CLIENT_ID: $GITHUB_OAUTH_CLIENT_ID
             annotations:
               # No Adobe authentication required for MCP servers
               require-adobe-auth: false
